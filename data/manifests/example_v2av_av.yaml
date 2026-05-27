@@ -1,0 +1,32 @@
+sample_id: "v2av_demo_av"
+task: "v2av"
+media:
+  container_path: "outputs/v2av_demo.mp4"
+  video_path: null
+  audio_path: null
+  modalities: ["video", "audio"]
+reference:
+  global_description: "A reference clip of a street musician continues into a longer city performance scene."
+  events:
+    - event_id: "e1"
+      start_sec: 2
+      end_sec: 4
+      text: "The musician continues the melody as nearby pedestrians stop to watch."
+      audio_expectation: "Instrumental continuation with growing street ambience."
+    - event_id: "e2"
+      start_sec: 4
+      end_sec: 6
+      text: "A child dances briefly while the musician changes posture."
+      audio_expectation: "Sustained music with short crowd reactions."
+    - event_id: "e3"
+      start_sec: 6
+      end_sec: 8
+      text: "The musician ends the segment with a final flourish and a small crowd applauds."
+      audio_expectation: "Final notes followed by applause."
+  ref_image_path: null
+  ref_video_path: "references/street_musician_ref.mp4"
+  continuation_boundary_sec: 2
+meta:
+  scenario: "performance_ads"
+  complexity: "L4"
+  prompt_detail: "medium"

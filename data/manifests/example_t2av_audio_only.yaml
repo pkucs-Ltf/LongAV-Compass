@@ -1,0 +1,32 @@
+sample_id: "t2av_demo_audio_only"
+task: "t2av"
+media:
+  container_path: null
+  video_path: null
+  audio_path: "outputs/t2av_audio_only.wav"
+  modalities: ["audio"]
+reference:
+  global_description: "An audio scene follows a runner moving from a quiet street into a crowded market."
+  events:
+    - event_id: "e1"
+      start_sec: 0
+      end_sec: 2.5
+      text: "Footsteps begin on an empty morning street."
+      audio_expectation: "Light wind and steady footsteps."
+    - event_id: "e2"
+      start_sec: 2.5
+      end_sec: 5.0
+      text: "The runner enters a market with denser human activity."
+      audio_expectation: "Crowd chatter and ambient movement."
+    - event_id: "e3"
+      start_sec: 5.0
+      end_sec: 8.0
+      text: "The runner slows down near a food stall."
+      audio_expectation: "Closer voices and utensil sounds."
+  ref_image_path: null
+  ref_video_path: null
+  continuation_boundary_sec: null
+meta:
+  scenario: "vlog"
+  complexity: "L1"
+  prompt_detail: "short"

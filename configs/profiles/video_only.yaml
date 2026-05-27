@@ -1,0 +1,26 @@
+profile_name: "video_only"
+mode: "canonical"
+description: "Plugin/profile pipeline with video and reference metrics enabled. Audio metrics are disabled."
+allow_auto_skip: true
+
+metrics:
+  VQ: true
+  ID_seg: true
+  ID_cross: true
+  Trans: true
+  Narrative: true
+  TVAlign: true
+  AVSync: false
+  AudQ: false
+  AudLong: false
+  IV_First: true
+  SubDrift: true
+  ImgSem: true
+  ContTrans: true
+  StyleConsist: true
+  StoryCreat: false
+
+aggregation:
+  enable: false
+  scheme: null
+  require_complete_metrics: true

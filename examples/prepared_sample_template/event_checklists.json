@@ -1,0 +1,22 @@
+{
+  "events": [
+    {
+      "event_id": "e1",
+      "questions": [
+        {
+          "question": "Is the product clearly introduced?",
+          "answer": "yes"
+        }
+      ]
+    },
+    {
+      "event_id": "e2",
+      "questions": [
+        {
+          "question": "Is the product shown in use?",
+          "answer": "yes"
+        }
+      ]
+    }
+  ]
+}

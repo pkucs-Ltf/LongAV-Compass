@@ -1,0 +1,49 @@
+# Credentials
+.env
+.env.*
+!.env.example
+configs/api_keys.yaml
+*.pem
+*.key
+*service-account*.json
+
+# Runtime outputs
+runs/
+outputs/
+tmp/
+.cache/
+samples/
+input/
+Output/
+*.log
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Large local data snapshots
+Dataset4.0/
+test_sample/
+test_sample_addTI2av/
+normal_sample50/
+test_sample_all/
+human_check/
+Human_check/
+
+# Paper/build artifacts
+Paper/*.aux
+Paper/*.bbl
+Paper/*.blg
+Paper/*.log
+Paper/*.out
+Paper/*.synctex.gz

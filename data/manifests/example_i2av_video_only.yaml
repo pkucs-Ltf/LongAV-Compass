@@ -1,0 +1,32 @@
+sample_id: "i2av_demo_video_only"
+task: "i2av"
+media:
+  container_path: "outputs/i2av_demo.mp4"
+  video_path: null
+  audio_path: null
+  modalities: ["video"]
+reference:
+  global_description: "A branded product shot expands from a still image into a short promotional scene."
+  events:
+    - event_id: "e1"
+      start_sec: 0
+      end_sec: 2.5
+      text: "The camera reveals the product from the reference angle."
+      audio_expectation: "None."
+    - event_id: "e2"
+      start_sec: 2.5
+      end_sec: 5.0
+      text: "The camera circles the product while lighting effects intensify."
+      audio_expectation: "None."
+    - event_id: "e3"
+      start_sec: 5.0
+      end_sec: 8.0
+      text: "The product settles into a final hero shot with brand framing."
+      audio_expectation: "None."
+  ref_image_path: "references/product_hero.png"
+  ref_video_path: null
+  continuation_boundary_sec: null
+meta:
+  scenario: "brand_ads"
+  complexity: "L3"
+  prompt_detail: "long"

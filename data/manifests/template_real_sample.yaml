@@ -1,0 +1,32 @@
+sample_id: "replace_me"
+task: "t2av"
+media:
+  container_path: "path/to/video_or_av.mp4"
+  video_path: null
+  audio_path: null
+  modalities: ["video", "audio"]
+reference:
+  global_description: "Describe the whole long video in 1-3 sentences."
+  events:
+    - event_id: "e1"
+      start_sec: 0
+      end_sec: 20
+      text: "Describe the first event."
+      audio_expectation: "Describe expected audio in this span."
+    - event_id: "e2"
+      start_sec: 20
+      end_sec: 40
+      text: "Describe the second event."
+      audio_expectation: "Describe expected audio in this span."
+    - event_id: "e3"
+      start_sec: 40
+      end_sec: 60
+      text: "Describe the third event."
+      audio_expectation: "Describe expected audio in this span."
+  ref_image_path: null
+  ref_video_path: null
+  continuation_boundary_sec: null
+meta:
+  scenario: "vlog"
+  complexity: "L2"
+  prompt_detail: "medium"

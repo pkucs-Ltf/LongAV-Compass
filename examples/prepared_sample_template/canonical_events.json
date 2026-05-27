@@ -1,0 +1,17 @@
+{
+  "global_description": "Create a coherent long-form advertisement for a product.",
+  "events": [
+    {
+      "event_id": "e1",
+      "start_sec": 0.0,
+      "end_sec": 8.0,
+      "text": "Introduce the product in a clean scene."
+    },
+    {
+      "event_id": "e2",
+      "start_sec": 8.0,
+      "end_sec": 16.0,
+      "text": "Show the product being used by a person."
+    }
+  ]
+}

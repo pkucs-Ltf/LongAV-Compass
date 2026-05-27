@@ -1,0 +1,27 @@
+profile_name: "audio_diagnostic"
+mode: "custom"
+description: "Audio-focused diagnostic profile for audio-only or audio-first samples."
+allow_auto_skip: true
+
+metrics:
+  VQ: false
+  ID_seg: false
+  ID_cross: false
+  Trans: false
+  Narrative: false
+  TVAlign: false
+  AVSync: true
+  AudQ: true
+  AudLong: true
+  IV_First: false
+  SubDrift: false
+  ImgSem: false
+  ContTrans: false
+  StyleConsist: false
+  StoryCreat: false
+
+aggregation:
+  enable: false
+  scheme: null
+  require_complete_metrics: false
+

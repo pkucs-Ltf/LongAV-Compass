@@ -1,0 +1,32 @@
+sample_id: "t2av_demo_av"
+task: "t2av"
+media:
+  container_path: "outputs/t2av_demo.mp4"
+  video_path: null
+  audio_path: null
+  modalities: ["video", "audio"]
+reference:
+  global_description: "A creator films a one-minute kitchen tutorial while narrating each step."
+  events:
+    - event_id: "e1"
+      start_sec: 0
+      end_sec: 2.5
+      text: "The creator introduces ingredients on a countertop."
+      audio_expectation: "Light room tone and speech introduction."
+    - event_id: "e2"
+      start_sec: 2.5
+      end_sec: 5.0
+      text: "The creator prepares and stirs the ingredients."
+      audio_expectation: "Mixing sounds and continued explanation."
+    - event_id: "e3"
+      start_sec: 5.0
+      end_sec: 8.0
+      text: "The creator plates the food and presents the result."
+      audio_expectation: "Short closing remarks and kitchen ambience."
+  ref_image_path: null
+  ref_video_path: null
+  continuation_boundary_sec: null
+meta:
+  scenario: "content_creator"
+  complexity: "L2"
+  prompt_detail: "medium"

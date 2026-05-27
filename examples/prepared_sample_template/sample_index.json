@@ -1,0 +1,11 @@
+{
+  "sample_id": "t2av__advertising__example_sample",
+  "task": "t2av",
+  "category": "advertising",
+  "source_sample_id": "example_sample",
+  "models": [
+    {
+      "model": "ExampleModel"
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+profile_name: "fast_debug"
+mode: "custom"
+description: "Minimal diagnostic profile for quick smoke runs."
+allow_auto_skip: true
+
+metrics:
+  VQ: true
+  ID_seg: true
+  TVAlign: true
+  AudQ: true
+  AudLong: false
+  Narrative: false
+  Trans: false
+  AVSync: false
+  IV_First: false
+  SubDrift: false
+  ImgSem: false
+  ContTrans: false
+  StyleConsist: false
+  StoryCreat: false
+
+aggregation:
+  enable: false
+  scheme: null
+  require_complete_metrics: false
+

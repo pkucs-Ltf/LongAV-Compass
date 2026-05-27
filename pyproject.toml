@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "longav-eval"
+version = "0.1.0"
+description = "Evaluation framework for long-form audio-video generation"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = ["PyYAML>=6.0", "numpy>=1.26", "Pillow>=10.0"]
+
+[project.optional-dependencies]
+judge = ["google-genai>=1.0", "requests>=2.31"]
+clip = ["torch>=2.0", "torchvision>=0.15", "ftfy", "regex", "tqdm"]
+dev = ["pytest>=8.0"]
+
+[project.scripts]
+longav-eval = "longav_eval.cli:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]

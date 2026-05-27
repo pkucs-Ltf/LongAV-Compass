@@ -1,0 +1,27 @@
+{
+  "video_path": "ExampleModel/full_video.mp4",
+  "events": [
+    {
+      "event_id": "e1",
+      "video_path": "ExampleModel/events/event_001.mp4",
+      "adjusted_start_sec": 0.0,
+      "adjusted_end_sec": 8.0,
+      "text": "Introduce the product in a clean scene."
+    },
+    {
+      "event_id": "e2",
+      "video_path": "ExampleModel/events/event_002.mp4",
+      "adjusted_start_sec": 8.0,
+      "adjusted_end_sec": 16.0,
+      "text": "Show the product being used by a person."
+    }
+  ],
+  "boundaries": [
+    {
+      "boundary_id": "b1",
+      "video_path": "ExampleModel/boundaries/boundary_001.mp4",
+      "left_text": "Introduce the product in a clean scene.",
+      "right_text": "Show the product being used by a person."
+    }
+  ]
+}

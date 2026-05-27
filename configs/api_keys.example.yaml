@@ -1,0 +1,16 @@
+gemini:
+  provider: "vertex"
+  model: "gemini-2.5-pro"
+  project: ""
+  location: "global"
+  credentials_json: ""
+  api_key: ""
+
+openai:
+  api_key: ""
+  model: ""
+
+notes:
+  fill_real_keys_in: "configs/api_keys.yaml"
+  commit_real_keys: false
+  vertex_hint: "If you already have a Vertex service-account JSON, put its absolute path in gemini.credentials_json."

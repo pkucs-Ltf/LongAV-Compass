@@ -1,0 +1,15 @@
+project:
+  name: "longav-eval"
+  default_profile: "configs/profiles/all_metrics.yaml"
+
+paths:
+  manifests_dir: "data/manifests"
+  runs_dir: "runs"
+  api_keys_file: "configs/api_keys.yaml"
+
+providers:
+  default_llm: "gemini"
+  default_face_model: "arcface"
+  default_visual_model: "dinov2"
+  default_text_image_model: "clip"
+  default_cross_modal_model: "imagebind"

@@ -1,0 +1,22 @@
+name: longav_compass
+channels:
+  - conda-forge
+  - pytorch
+  - defaults
+dependencies:
+  - python=3.11
+  - pip
+  - ffmpeg
+  - numpy>=1.26
+  - pillow>=10.0
+  - pyyaml>=6.0
+  - pytorch>=2.0
+  - torchvision>=0.15
+  - ftfy
+  - regex
+  - tqdm
+  - huggingface_hub
+  - requests>=2.31
+  - pip:
+      - google-genai>=1.0
+      - git+https://github.com/openai/CLIP.git

@@ -1,0 +1,26 @@
+profile_name: "all_metrics"
+mode: "canonical"
+description: "Plugin/profile pipeline with shared, task-specific, and audio metrics enabled."
+allow_auto_skip: true
+
+metrics:
+  VQ: true
+  ID_seg: true
+  ID_cross: true
+  Trans: true
+  Narrative: true
+  TVAlign: true
+  AVSync: true
+  AudQ: true
+  AudLong: true
+  IV_First: true
+  SubDrift: true
+  ImgSem: true
+  ContTrans: true
+  StyleConsist: true
+  StoryCreat: false
+
+aggregation:
+  enable: false
+  scheme: null
+  require_complete_metrics: true

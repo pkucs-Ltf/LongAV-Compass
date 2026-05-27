@@ -1,0 +1,29 @@
+sample_id: "BV1fntqewETB_best_effort"
+task: "t2av"
+media:
+  container_path: "/Users/ltf/code/AVbench_testset/testset/LongAVbench/Long_Zhuxuanyu/video/videos/bilibili_content_creator/20号宇航员__BV1fntqewETB.mp4"
+  video_path: null
+  audio_path: null
+  modalities: ["video", "audio"]
+reference:
+  global_description: "A one-minute vertical AIGC micro-drama about overwork in Beijing. The story follows an office worker who is about to leave when the boss stops him, assigns urgent overtime work, and frames the experience with exaggerated short-video logic and an urban Beijing atmosphere."
+  events:
+    - event_id: "e1"
+      start_sec: 0
+      end_sec: 20
+      text: "An office worker appears ready to leave at the end of the workday, establishing a polished office setting and a city-view backdrop."
+      audio_expectation: "Dialogue or subtitle-driven setup with office ambience."
+    - event_id: "e2"
+      start_sec: 20
+      end_sec: 40
+      text: "The boss stops the worker, mentions an urgent task, and explicitly requires overtime, creating a clear conflict around forced extra work."
+      audio_expectation: "Dialogue emphasizing urgency, conflict, or command."
+    - event_id: "e3"
+      start_sec: 40
+      end_sec: 60
+      text: "The short drama escalates or reflects on the overtime theme with exaggerated visual storytelling and a broader Beijing-related emotional or atmospheric framing."
+      audio_expectation: "Continuation or resolution of the conflict with sustained dramatic tone."
+meta:
+  scenario: "content_creator"
+  complexity: "L2"
+  prompt_detail: "medium"
