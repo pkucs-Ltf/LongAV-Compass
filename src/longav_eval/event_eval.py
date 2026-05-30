@@ -11,6 +11,7 @@ from typing import Any
 import numpy as np
 from PIL import Image
 
+from .clip_backend import ClipBackendError, image_video_alignment_score, text_video_alignment_score
 from .config import load_api_keys
 from .evaluate import _build_gemini_client
 from .heuristics import (
@@ -96,6 +97,7 @@ def run_event_evaluation(
 
     sample_index = _load_json(sample_dir / "sample_index.json")
     canonical = _load_json(sample_dir / "canonical_events.json")
+    reference_image_path = _resolve_reference_image_path(sample_index, canonical, sample_dir)
     client = _build_gemini_client(load_api_keys(api_keys_path))
     if client is None:
         raise RuntimeError("No usable Gemini client configured.")
@@ -123,6 +125,7 @@ def run_event_evaluation(
     holistic_rows: list[dict[str, Any]] = []
     objective_rows: list[dict[str, Any]] = []
     alignment_rows: list[dict[str, Any]] = []
+    image_alignment_rows: list[dict[str, Any]] = []
     audio_rows: list[dict[str, Any]] = []
     audio_event_rows: list[dict[str, Any]] = []
 
@@ -195,12 +198,19 @@ def run_event_evaluation(
             metric_sources["objective_video_quality"] = "computed"
 
         cached_alignment = _cached_dict_metric(cached_results, "text_video_alignment", "text_video_alignment_norm")
-        if cached_alignment is not None:
+        if cached_alignment is not None and cached_alignment.get("backend") == "clip":
             alignment = cached_alignment
             metric_sources["text_video_alignment"] = "reused"
         else:
             alignment = _score_text_video_alignment(client, model, canonical, video_path, model_output_dir)
             metric_sources["text_video_alignment"] = "computed"
+
+        image_alignment = _score_image_video_alignment(
+            reference_image_path=reference_image_path,
+            events=events,
+            output_dir=model_output_dir,
+        )
+        metric_sources["image_video_alignment"] = image_alignment["status"]
 
         if skip_audio:
             audio_eval = _skipped_audio_evaluation("Audio evaluation disabled for this run.")
@@ -220,7 +230,7 @@ def run_event_evaluation(
         long_form_structure = float(long_form["long_form_structure"])
         holistic_presentation = float(holistic["holistic_presentation"])
         objective_video_quality = float(objective["objective_video_quality_norm"])
-        text_video_alignment = float(alignment["text_video_alignment_norm"])
+        text_video_alignment = _optional_float(alignment.get("text_video_alignment_norm"))
 
         components = {
             "event_fulfillment": 0.0 if event_fulfillment is None else event_fulfillment,
@@ -229,7 +239,7 @@ def run_event_evaluation(
             "transition_stability": _norm_mos(transition_stability),
             "holistic_presentation": _norm_mos(holistic_presentation),
             "objective_video_quality": objective_video_quality,
-            "text_video_alignment": text_video_alignment,
+            "text_video_alignment": 0.0 if text_video_alignment is None else text_video_alignment,
         }
         audio_score = _optional_float(audio_eval.get("audio_score"))
 
@@ -250,7 +260,10 @@ def run_event_evaluation(
             "transition_stability": round(transition_stability, 4),
             "holistic_presentation": round(holistic_presentation, 4),
             "objective_video_quality": round(objective_video_quality, 4),
-            "text_video_alignment": round(text_video_alignment, 4),
+            "text_video_alignment": _round_optional(text_video_alignment),
+            "text_video_alignment_clip": _round_optional(text_video_alignment),
+            "iv1_clip": _round_optional(image_alignment.get("iv1_clip")),
+            "imgalign_clip": _round_optional(image_alignment.get("imgalign_clip")),
             "event_count": len(events),
             "boundary_count": len(transitions),
             "qa_included": not skip_qa,
@@ -258,6 +271,7 @@ def run_event_evaluation(
             "metric_sources": json.dumps(metric_sources, ensure_ascii=False, sort_keys=True),
             "objective_backend": objective["backend"],
             "alignment_backend": alignment["backend"],
+            "image_alignment_backend": image_alignment["backend"],
         }
         model_rows.append(model_summary)
 
@@ -268,6 +282,7 @@ def run_event_evaluation(
         holistic_rows.append({"model": model, **holistic})
         objective_rows.append({"model": model, **objective})
         alignment_rows.append({"model": model, **alignment})
+        image_alignment_rows.append({"model": model, **image_alignment})
         audio_rows.append({"model": model, **_audio_summary_row(audio_eval)})
         audio_event_rows.extend({"model": model, **row} for row in audio_eval.get("audio_event_scores", []))
 
@@ -284,6 +299,7 @@ def run_event_evaluation(
                 "holistic_presentation": holistic,
                 "objective_video_quality": objective,
                 "text_video_alignment": alignment,
+                "image_video_alignment": image_alignment,
                 "audio_evaluation": audio_eval,
             },
         )
@@ -311,6 +327,7 @@ def run_event_evaluation(
     _write_csv(output_dir / "holistic_scores.csv", holistic_rows)
     _write_csv(output_dir / "objective_video_metrics.csv", objective_rows)
     _write_csv(output_dir / "text_video_alignment.csv", alignment_rows)
+    _write_csv(output_dir / "image_video_alignment.csv", image_alignment_rows)
     _write_csv(output_dir / "audio_scores.csv", audio_rows)
     _write_csv(output_dir / "audio_event_scores.csv", audio_event_rows)
     return summary
@@ -718,23 +735,129 @@ def _score_objective_video_quality(video_path: Path, output_dir: Path) -> dict[s
 
 
 def _score_text_video_alignment(client, model: str, canonical: dict[str, Any], video_path: Path, output_dir: Path) -> dict[str, Any]:
-    preview = _make_preview(video_path, output_dir / "previews" / "text_video_alignment.mp4", fps=2, max_width=480)
-    prompt = (
-        "Estimate text-video semantic alignment for this complete video.\n"
-        "Return a score from 0.0 to 1.0. 1.0 means the video strongly matches the global prompt and event list; 0.0 means unrelated.\n"
-        "This is a coarse alignment metric, not event-level QA.\n\n"
-        f"Global description:\n{canonical.get('global_description', '')}\n\n"
-        f"Event list:\n{_event_lines(canonical)}\n\n"
-        "Return strict JSON: "
-        '{"text_video_alignment": number, "reason": "short"}'
+    del client, model
+    try:
+        frames = _extract_sampled_frames(
+            video_path,
+            output_dir / "clip_alignment_frames" / "text_video_alignment",
+            fps=1,
+            max_frames=24,
+            max_width=336,
+        )
+    except Exception as exc:  # noqa: BLE001
+        return {
+            "backend": "clip",
+            "expert_backend": "error",
+            "status": "failed",
+            "text_video_alignment_norm": None,
+            "text_video_alignment_clip": None,
+            "frame_count": 0,
+            "reason": f"Failed to extract frames for CLIP text-video alignment: {exc}",
+        }
+    text = "\n".join(
+        part
+        for part in [
+            str(canonical.get("global_description") or "").strip(),
+            _event_lines(canonical),
+        ]
+        if part
     )
-    payload = _score_video_json(client, prompt, preview)
+    try:
+        payload = text_video_alignment_score(text, frames)
+    except ClipBackendError as exc:
+        return {
+            "backend": "clip",
+            "expert_backend": "error",
+            "status": "failed",
+            "text_video_alignment_norm": None,
+            "text_video_alignment_clip": None,
+            "frame_count": len(frames),
+            "reason": str(exc),
+        }
     return {
-        "backend": "gemini_surrogate",
-        "expert_backend": "not_configured",
-        "text_video_alignment_norm": round(_num_range(payload, "text_video_alignment", 0.0, 1.0), 4),
-        "reason": payload.get("reason", ""),
-        "note": "Surrogate metric used until ViCLIP/VideoCLIP embedding backend is configured.",
+        "backend": "clip",
+        "expert_backend": payload["clip_backend"],
+        "status": "computed",
+        "text_video_alignment_norm": round(float(payload["text_video_alignment_clip"]), 4),
+        "text_video_alignment_clip": round(float(payload["text_video_alignment_clip"]), 4),
+        "mean_cosine": payload["mean_cosine"],
+        "min_cosine": payload["min_cosine"],
+        "max_cosine": payload["max_cosine"],
+        "frame_count": payload["frame_count"],
+        "clip_model": payload["clip_model"],
+        "clip_pretrained": payload["clip_pretrained"],
+        "clip_device": payload["clip_device"],
+        "score_method": payload["score_method"],
+    }
+
+
+def _score_image_video_alignment(
+    reference_image_path: Path | None,
+    events: list[dict[str, Any]],
+    output_dir: Path,
+) -> dict[str, Any]:
+    if reference_image_path is None:
+        return {
+            "status": "skipped",
+            "backend": "none",
+            "reason": "No I2AV reference image available for image-video alignment.",
+        }
+    if not events:
+        return {
+            "status": "skipped",
+            "backend": "clip",
+            "reference_image_path": reference_image_path.as_posix(),
+            "reason": "No event clips available for image-video alignment.",
+        }
+
+    event_frames: list[Path] = []
+    first_event_frames: list[Path] = []
+    for event in events:
+        event_id = str(event.get("event_id") or f"event_{len(event_frames) + 1}")
+        video_path = Path(event["video_path"])
+        try:
+            frames = _extract_sampled_frames(
+                video_path,
+                output_dir / "clip_alignment_frames" / "image_video_alignment" / event_id,
+                fps=1,
+                max_frames=3,
+                max_width=336,
+            )
+        except Exception as exc:  # noqa: BLE001
+            return {
+                "status": "failed",
+                "backend": "clip",
+                "reference_image_path": reference_image_path.as_posix(),
+                "reason": f"Failed to extract frames for CLIP image-video alignment: {exc}",
+            }
+        if not first_event_frames:
+            first_event_frames = frames
+        event_frames.extend(frames)
+
+    try:
+        iv1_payload = image_video_alignment_score(reference_image_path, first_event_frames[:1])
+        imgalign_payload = image_video_alignment_score(reference_image_path, event_frames)
+    except ClipBackendError as exc:
+        return {
+            "status": "failed",
+            "backend": "clip",
+            "reference_image_path": reference_image_path.as_posix(),
+            "reason": str(exc),
+        }
+
+    return {
+        "status": "computed",
+        "backend": "clip",
+        "reference_image_path": reference_image_path.as_posix(),
+        "iv1_clip": round(float(iv1_payload["image_video_alignment_clip"]), 4),
+        "imgalign_clip": round(float(imgalign_payload["image_video_alignment_clip"]), 4),
+        "iv1_mean_cosine": iv1_payload["mean_cosine"],
+        "imgalign_mean_cosine": imgalign_payload["mean_cosine"],
+        "frame_count": imgalign_payload["frame_count"],
+        "clip_model": imgalign_payload["clip_model"],
+        "clip_pretrained": imgalign_payload["clip_pretrained"],
+        "clip_device": imgalign_payload["clip_device"],
+        "score_method": imgalign_payload["score_method"],
     }
 
 
@@ -1409,6 +1532,25 @@ def _load_json(path: Path) -> dict[str, Any]:
         return json.load(handle)
 
 
+def _resolve_reference_image_path(
+    sample_index: dict[str, Any],
+    canonical: dict[str, Any],
+    sample_dir: Path,
+) -> Path | None:
+    reference = sample_index.get("reference") or canonical.get("reference") or {}
+    raw_path = None
+    if isinstance(reference, dict):
+        raw_path = reference.get("image_path") or reference.get("ref_image_path") or reference.get("reference_image_path")
+    if not raw_path:
+        return None
+    path = Path(str(raw_path))
+    candidates = [path] if path.is_absolute() else [sample_dir / path, path]
+    for candidate in candidates:
+        if candidate.exists():
+            return candidate.resolve()
+    return None
+
+
 def _write_json(path: Path, data: Any) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", encoding="utf-8") as handle:
@@ -1420,8 +1562,12 @@ def _write_csv(path: Path, rows: list[dict[str, Any]]) -> None:
     if not rows:
         path.write_text("", encoding="utf-8")
         return
-    fieldnames = list(rows[0].keys())
+    fieldnames: list[str] = []
+    for row in rows:
+        for key in row:
+            if key not in fieldnames:
+                fieldnames.append(key)
     with path.open("w", newline="", encoding="utf-8") as handle:
         writer = csv.DictWriter(handle, fieldnames=fieldnames)
         writer.writeheader()
-        writer.writerows(rows)
+        writer.writerows({key: row.get(key, "") for key in fieldnames} for row in rows)

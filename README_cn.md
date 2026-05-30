@@ -22,7 +22,7 @@ bash setup_longav.sh
 # 在 configs/api_keys.yaml 中填写本地可用的 API key 或 Vertex 配置。
 ```
 
-`environment.yaml` 会安装 Python、ffmpeg、PyTorch、judge 依赖和 OpenAI CLIP。`setup_longav.sh` 会安装本仓库，自动下载 ViT-B/32 CLIP 权重，并创建 `configs/api_keys.yaml`。CLIP/EventCLIP/ImageCLIP 指标建议使用本地 NVIDIA GPU；只做分数聚合或 API judge 评测不需要 GPU。
+`environment.yaml` 会安装 Python、ffmpeg、PyTorch、judge 依赖和 CLIP 后端。`setup_longav.sh` 会安装本仓库，初始化 CLIP 后端，并创建 `configs/api_keys.yaml`。默认优先使用 OpenCLIP 的 multilingual 模型，可通过 `LONGAV_CLIP_BACKEND`、`LONGAV_CLIP_MODEL` 和 `LONGAV_CLIP_PRETRAINED` 覆盖；CLIP/EventCLIP/ImageCLIP 指标建议使用本地 NVIDIA GPU，只做分数聚合或 API judge 评测不需要 GPU。
 
 下载数据集：
 

@@ -12,7 +12,7 @@ dependencies = ["PyYAML>=6.0", "numpy>=1.26", "Pillow>=10.0"]
 
 [project.optional-dependencies]
 judge = ["google-genai>=1.0", "requests>=2.31"]
-clip = ["torch>=2.0", "torchvision>=0.15", "ftfy", "regex", "tqdm"]
+clip = ["torch>=2.0", "torchvision>=0.15", "open_clip_torch>=2.24", "ftfy", "regex", "tqdm"]
 dev = ["pytest>=8.0"]
 
 [project.scripts]

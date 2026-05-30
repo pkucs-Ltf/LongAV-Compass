@@ -101,7 +101,7 @@ def build_metric_registry() -> dict[str, MetricDefinition]:
             evaluator_type="expert_model",
             required_inputs=frozenset({"video", "reference_image", "events"}),
             tasks=frozenset({"i2av"}),
-            providers=("dinov2", "arcface"),
+            providers=("clip", "dinov2", "arcface"),
             description="How strongly the referenced subject drifts over time.",
         ),
         MetricDefinition(
@@ -128,7 +128,7 @@ def build_metric_registry() -> dict[str, MetricDefinition]:
             evaluator_type="expert_model",
             required_inputs=frozenset({"video", "reference_video"}),
             tasks=frozenset({"v2av"}),
-            providers=("dinov2",),
+            providers=("clip", "dinov2"),
             description="Style consistency between reference video and generated continuation.",
         ),
         MetricDefinition(
@@ -142,4 +142,3 @@ def build_metric_registry() -> dict[str, MetricDefinition]:
         ),
     )
     return {metric.metric_id: metric for metric in metrics}
-

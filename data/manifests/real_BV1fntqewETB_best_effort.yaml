@@ -1,7 +1,7 @@
 sample_id: "BV1fntqewETB_best_effort"
 task: "t2av"
 media:
-  container_path: "/Users/ltf/code/AVbench_testset/testset/LongAVbench/Long_Zhuxuanyu/video/videos/bilibili_content_creator/20号宇航员__BV1fntqewETB.mp4"
+  container_path: "examples/media/BV1fntqewETB_best_effort.mp4"
   video_path: null
   audio_path: null
   modalities: ["video", "audio"]

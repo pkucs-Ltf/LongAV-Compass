@@ -3,6 +3,12 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
+from .clip_backend import (
+    ClipBackendError,
+    image_semantic_alignment_score,
+    image_video_alignment_score,
+    text_video_alignment_score,
+)
 from .gemini import GeminiClient
 from .heuristics import (
     audio_coherence_score,
@@ -19,7 +25,9 @@ from .runtime import MetricResult, PreparedSample
 from .schemas import ExecutionPlan, SampleManifest
 
 
-LLM_ONLY_METRICS = {"TVAlign", "ImgSem", "StoryCreat"}
+CLIP_FIRST_METRICS = {"TVAlign", "IV_First", "ImgSem", "SubDrift", "StyleConsist"}
+GEMINI_METRICS = {"VQ", "Trans", "Narrative", "AudQ", "AudLong", "ContTrans", "StoryCreat"}
+LLM_ONLY_METRICS = {"StoryCreat"}
 
 
 def evaluate_plan(
@@ -42,7 +50,13 @@ def evaluate_plan(
             )
             continue
 
-        if gemini_client and decision.metric_id in {"VQ", "Trans", "Narrative", "TVAlign", "AudQ", "AudLong", "ImgSem", "ContTrans", "StoryCreat"}:
+        if decision.metric_id in CLIP_FIRST_METRICS:
+            local_result = _evaluate_locally(decision.metric_id, manifest, prepared)
+            if local_result is not None:
+                results[decision.metric_id] = local_result
+                continue
+
+        if gemini_client and decision.metric_id in GEMINI_METRICS:
             try:
                 results[decision.metric_id] = _evaluate_with_gemini(decision.metric_id, manifest, prepared, gemini_client)
                 continue
@@ -118,6 +132,27 @@ def _build_gemini_client(api_keys: dict[str, Any]) -> GeminiClient | None:
 
 def _evaluate_locally(metric_id: str, manifest: SampleManifest, prepared: PreparedSample) -> MetricResult | None:
     segments = list(prepared.segments)
+    frame_paths = _all_frame_paths(segments)
+
+    if metric_id == "TVAlign":
+        text = _alignment_text(manifest)
+        try:
+            details = text_video_alignment_score(text, frame_paths)
+        except ClipBackendError as exc:
+            return MetricResult(metric_id, "failed", "clip", None, reason=str(exc))
+        score = 100.0 * float(details["text_video_alignment_clip"])
+        return MetricResult(metric_id, "computed", "clip", round(score, 4), details=details)
+
+    if metric_id == "ImgSem":
+        if not prepared.reference_image_path:
+            return MetricResult(metric_id, "skipped", "clip", None, reason="Missing reference image.")
+        try:
+            details = image_semantic_alignment_score(prepared.reference_image_path, _alignment_text(manifest), frame_paths)
+        except ClipBackendError as exc:
+            return MetricResult(metric_id, "failed", "clip", None, reason=str(exc))
+        score = 100.0 * float(details["image_semantic_alignment_clip"])
+        return MetricResult(metric_id, "computed", "clip", round(score, 4), details=details)
+
     if metric_id == "VQ":
         frame_scores = []
         details = []
@@ -198,36 +233,80 @@ def _evaluate_locally(metric_id: str, manifest: SampleManifest, prepared: Prepar
 
     if metric_id == "IV_First":
         if not prepared.reference_image_path or not segments or not segments[0].frame_paths:
-            return MetricResult(metric_id, "skipped", "heuristic", None, reason="Missing reference image or first segment frame.")
-        score = cosine_similarity_score(prepared.reference_image_path, segments[0].frame_paths[0])
-        return MetricResult(metric_id, "computed", "heuristic", round(score, 4))
+            return MetricResult(metric_id, "skipped", "clip", None, reason="Missing reference image or first segment frame.")
+        try:
+            details = image_video_alignment_score(prepared.reference_image_path, [segments[0].frame_paths[0]])
+        except ClipBackendError as exc:
+            return MetricResult(metric_id, "failed", "clip", None, reason=str(exc))
+        score = 100.0 * float(details["image_video_alignment_clip"])
+        return MetricResult(metric_id, "computed", "clip", round(score, 4), details=details)
 
     if metric_id == "SubDrift":
         if not prepared.reference_image_path:
-            return MetricResult(metric_id, "skipped", "heuristic", None, reason="Missing reference image.")
-        scores = []
-        for segment in segments:
-            for frame_path in segment.frame_paths:
-                scores.append(cosine_similarity_score(prepared.reference_image_path, frame_path))
-        return MetricResult(metric_id, "computed", "heuristic", round(average(scores), 4), details={"frame_count": len(scores)})
+            return MetricResult(metric_id, "skipped", "clip", None, reason="Missing reference image.")
+        try:
+            details = image_video_alignment_score(prepared.reference_image_path, frame_paths)
+        except ClipBackendError as exc:
+            return MetricResult(metric_id, "failed", "clip", None, reason=str(exc))
+        score = 100.0 * float(details["image_video_alignment_clip"])
+        return MetricResult(metric_id, "computed", "clip", round(score, 4), details=details)
 
     if metric_id == "ContTrans":
         if not prepared.reference_video_frame_paths or not segments or not segments[0].frame_paths:
-            return MetricResult(metric_id, "skipped", "heuristic", None, reason="Missing reference video frames or continuation frames.")
-        score = cosine_similarity_score(prepared.reference_video_frame_paths[-1], segments[0].frame_paths[0])
-        return MetricResult(metric_id, "computed", "heuristic", round(score, 4))
+            return MetricResult(metric_id, "skipped", "clip", None, reason="Missing reference video frames or continuation frames.")
+        try:
+            details = image_video_alignment_score(prepared.reference_video_frame_paths[-1], [segments[0].frame_paths[0]])
+        except ClipBackendError as exc:
+            return MetricResult(metric_id, "failed", "clip", None, reason=str(exc))
+        score = 100.0 * float(details["image_video_alignment_clip"])
+        return MetricResult(metric_id, "computed", "clip", round(score, 4), details=details)
 
     if metric_id == "StyleConsist":
         if not prepared.reference_video_frame_paths:
-            return MetricResult(metric_id, "skipped", "heuristic", None, reason="Missing reference video frames.")
-        scores = []
+            return MetricResult(metric_id, "skipped", "clip", None, reason="Missing reference video frames.")
         continuation_frames = [frame for segment in segments for frame in segment.frame_paths[:1]]
-        for ref_frame in prepared.reference_video_frame_paths:
-            for continuation_frame in continuation_frames:
-                scores.append(cosine_similarity_score(ref_frame, continuation_frame))
-        return MetricResult(metric_id, "computed", "heuristic", round(average(scores), 4), details={"pair_count": len(scores)})
+        if not continuation_frames:
+            return MetricResult(metric_id, "skipped", "clip", None, reason="Missing continuation frames.")
+        try:
+            payloads = [
+                image_video_alignment_score(reference_frame, continuation_frames)
+                for reference_frame in prepared.reference_video_frame_paths
+            ]
+        except ClipBackendError as exc:
+            return MetricResult(metric_id, "failed", "clip", None, reason=str(exc))
+        scores = [float(payload["image_video_alignment_clip"]) for payload in payloads]
+        score = 100.0 * average(scores)
+        return MetricResult(
+            metric_id,
+            "computed",
+            "clip",
+            round(score, 4),
+            details={
+                "backend": "clip",
+                "reference_frame_count": len(payloads),
+                "continuation_frame_count": len(continuation_frames),
+                "style_consistency_clip": round(average(scores), 6),
+                "reference_scores": scores,
+            },
+        )
 
     return None
+
+
+def _all_frame_paths(segments: list[Any]) -> list[str]:
+    return [frame_path for segment in segments for frame_path in segment.frame_paths]
+
+
+def _alignment_text(manifest: SampleManifest) -> str:
+    event_lines = [
+        f"{event.event_id}: {event.text}"
+        for event in manifest.reference.events
+        if event.text
+    ]
+    parts = [manifest.reference.global_description.strip()]
+    if event_lines:
+        parts.append("\n".join(event_lines))
+    return "\n".join(part for part in parts if part)
 
 
 def _evaluate_with_gemini(

@@ -17,7 +17,7 @@ def aggregate_scores(
     """
     computed = sorted(metric_id for metric_id, result in metric_results.items() if result.status == "computed")
     skipped = sorted(metric_id for metric_id, result in metric_results.items() if result.status == "skipped")
-    failed = sorted(metric_id for metric_id, result in metric_results.items() if result.status == "failed")
+    failed = sorted(metric_id for metric_id, result in metric_results.items() if result.status in {"failed", "error"})
     return {
         "metric_report": {
             "status": "computed",

@@ -63,6 +63,8 @@ conda activate longav_compass
 bash setup_longav.sh
 ```
 
+`setup_longav.sh` installs the package, initializes the CLIP backend, and creates `configs/api_keys.yaml` from the example template if it does not already exist. The default CLIP path uses a multilingual OpenCLIP model and can be overridden with `LONGAV_CLIP_BACKEND`, `LONGAV_CLIP_MODEL`, and `LONGAV_CLIP_PRETRAINED`.
+
 Download the benchmark dataset:
 
 ```bash
@@ -71,7 +73,7 @@ huggingface-cli download TengfeiLiuCoder/LongAV-Compass \
   --local-dir data/LongAV-Compass
 ```
 
-`setup_longav.sh` creates `configs/api_keys.yaml` from the example template if it does not already exist. Fill local credentials before running judge-based evaluation:
+Fill local credentials before running judge-based evaluation:
 
 ```bash
 # Edit configs/api_keys.yaml with your local API credentials.

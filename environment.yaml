@@ -19,4 +19,5 @@ dependencies:
   - requests>=2.31
   - pip:
       - google-genai>=1.0
+      - open_clip_torch>=2.24
       - git+https://github.com/openai/CLIP.git

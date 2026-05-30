@@ -19,17 +19,24 @@ echo "[LongAV] installing LongAV-Compass package..."
 "${LONGAV_PYTHON}" -m pip install --upgrade pip
 (cd "${LONGAV_ROOT}" && "${LONGAV_PYTHON}" -m pip install -e '.[judge,clip]')
 
+if ! "${LONGAV_PYTHON}" -c "import open_clip" >/dev/null 2>&1
+then
+  echo "[LongAV] installing OpenCLIP..."
+  "${LONGAV_PYTHON}" -m pip install "open_clip_torch>=2.24"
+fi
+
 if ! "${LONGAV_PYTHON}" -c "import clip" >/dev/null 2>&1
 then
   echo "[LongAV] installing OpenAI CLIP..."
   "${LONGAV_PYTHON}" -m pip install git+https://github.com/openai/CLIP.git
 fi
 
-echo "[LongAV] downloading OpenAI CLIP ViT-B/32 weights..."
+echo "[LongAV] checking CLIP backend..."
 "${LONGAV_PYTHON}" - <<'PY'
-import clip
-clip.load("ViT-B/32", device="cpu")
-print("[LongAV] OpenAI CLIP ViT-B/32 is ready")
+from longav_eval.clip_backend import _load_clip
+
+_load_clip()
+print("[LongAV] CLIP backend is ready")
 PY
 
 mkdir -p "${LONGAV_RUNS_ROOT}"
@@ -49,6 +56,6 @@ else
 fi
 
 echo "[LongAV] setup complete"
-echo "[LongAV] OpenAI CLIP weights were downloaded by setup_longav.sh."
+echo "[LongAV] CLIP backend was initialized by setup_longav.sh."
 echo "[LongAV] next: edit configs/api_keys.yaml, then run:"
 echo "         bash run_eval_batch.sh /path/to/test_sample runs/example_eval '*__*'"
