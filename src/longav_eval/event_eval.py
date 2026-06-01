@@ -72,6 +72,143 @@ AUDIO_BLEND_WEIGHTS = {
     "audlong_llm": 0.75,
 }
 
+EVENT_REALIZATION_RUBRIC = """Use 1-5 MOS scores for each event-realization field. Semantic fulfillment is scored separately, but if the target event is absent or unjudgeable, use 1-2.
+motion_naturalness:
+1 = motion is failed, physically incoherent, or impossible to judge.
+2 = motion is mostly stiff, incorrect, or visibly broken.
+3 = motion is understandable but has visible unnaturalness, jitter, or timing issues.
+4 = motion is natural overall, with only minor local issues.
+5 = motion is fluent, physically plausible, and well matched to the attempted event.
+subject_integrity:
+1 = main subjects are missing, unrecognizable, or severely deformed.
+2 = subjects are recognizable but unstable, distorted, or frequently broken.
+3 = subjects are mostly recognizable, with visible but tolerable identity or geometry issues.
+4 = subjects remain stable and intact, with only minor defects.
+5 = subjects are consistently clear, complete, and visually coherent.
+artifact_control:
+1 = severe artifacts dominate the clip and make it hard to judge.
+2 = obvious artifacts repeatedly disrupt the clip.
+3 = artifacts are noticeable but the event remains viewable.
+4 = artifacts are mild or infrequent.
+5 = the clip is clean, with no obvious generation artifacts.
+visual_quality:
+1 = image quality is unusable because of blur, exposure failure, compression, or corruption.
+2 = image quality is poor and frequently distracts from the event.
+3 = image quality is acceptable, with visible but tolerable issues.
+4 = image quality is good, with only minor defects.
+5 = image quality is sharp, clear, well exposed, and visually polished."""
+
+LONG_FORM_RUBRIC = """Use 1-5 MOS scores for each long-form structure field. Do not judge low-level frame quality unless it breaks the long-form structure.
+event_order_correctness:
+1 = event order is mostly wrong, missing, or impossible to follow.
+2 = several events are out of order or incorrectly arranged.
+3 = the main event order is mostly correct, with noticeable ordering or transition ambiguity.
+4 = event order is correct, with only minor ambiguity.
+5 = event order fully follows the intended sequence.
+coverage_balance:
+1 = most events are absent or severely underrepresented.
+2 = some events are covered, but important events are missing or extremely imbalanced.
+3 = major events are covered, but duration or emphasis is visibly uneven.
+4 = event coverage is balanced overall, with only minor imbalance.
+5 = all events are covered with appropriate and well balanced emphasis.
+pacing_consistency:
+1 = pacing is broken, with severe stalls, jumps, or rushed segments.
+2 = pacing is often too rushed, too slow, or uneven.
+3 = pacing is acceptable, but several segments feel rushed, stretched, or uneven.
+4 = pacing is smooth overall, with minor rhythm issues.
+5 = pacing is natural and supports the long-video structure throughout.
+cross_event_continuity:
+1 = cross-event continuity is absent or incoherent.
+2 = continuity between events is often broken or confusing.
+3 = continuity is understandable but has visible gaps or abrupt changes.
+4 = continuity is coherent overall, with only minor discontinuities.
+5 = events connect into a coherent long-form video with natural continuity."""
+
+TRANSITION_RUBRIC = """Use a 1-5 quality score for llm_transition_stability. Normal shot changes and event changes are allowed; penalize only boundary defects.
+1 = severe boundary failure such as black frames, freezes, broken action, major deformation, or object disappearance.
+2 = obvious boundary instability that disrupts viewing or event understanding.
+3 = noticeable but tolerable boundary defect, such as a small jump, brief stutter, or mild deformation.
+4 = mostly clean boundary, with only slight visual or motion discontinuity.
+5 = clean and stable boundary with no obvious technical defect."""
+
+HOLISTIC_RUBRIC = """Use 1-5 MOS scores for each holistic presentation field. Do not duplicate event-level checklist scoring.
+style_consistency:
+1 = visual style is chaotic or inconsistent across the video.
+2 = style changes are frequent and distracting.
+3 = style is mostly consistent, but with noticeable inconsistencies.
+4 = style is consistent overall, with minor deviations.
+5 = style is coherent and stable throughout.
+visual_appeal:
+1 = the video is visually unpleasant or unusable.
+2 = visual appeal is weak because of repeated quality, composition, or aesthetic problems.
+3 = visual appeal is acceptable but ordinary or uneven.
+4 = the video is visually pleasing overall, with minor issues.
+5 = the video is highly polished, attractive, and engaging.
+commercial_completeness:
+1 = the video does not work as a complete advertising or presentation piece.
+2 = the video has some relevant material but lacks a clear complete presentation.
+3 = the video communicates the main content, but feels incomplete or weakly organized.
+4 = the video feels mostly complete as an advertising or presentation piece.
+5 = the video feels complete, coherent, and effective as a polished advertising or presentation piece.
+overall_watchability:
+1 = the video is difficult to watch to completion.
+2 = the viewing experience is poor, with repeated disruptions or weak coherence.
+3 = the video is watchable, but has noticeable issues in rhythm, clarity, or polish.
+4 = the video is easy to watch and mostly polished.
+5 = the video is smooth, engaging, coherent, and highly watchable."""
+
+AUDIO_EVENT_RUBRIC = """Use 1-5 MOS scores for each audio field.
+av_sync:
+1 = audio is unrelated to visible actions/cuts, or speech/sound effects/music changes are severely misaligned.
+2 = some synchronization exists, but there are multiple obvious delays, early sounds, or mismatched sound cues.
+3 = mostly synchronized, with noticeable but tolerable timing errors or missing sound cues.
+4 = well synchronized, with only minor local timing errors.
+5 = audio tightly matches visible actions, cuts, mouth motion when present, and sound-effect trigger points.
+audio_event_match:
+1 = audio does not match the event text or audio expectation, or key expected sounds are absent.
+2 = audio has limited relevance, but the main expected sounds or event-specific audio are mostly wrong or missing.
+3 = audio generally matches the event, but some expected sounds, speech, ambience, or music details are missing or inaccurate.
+4 = audio matches the event and audio expectation well, with only minor missing or imprecise details.
+5 = audio precisely covers the event's expected speech, ambience, sound effects, and music behavior.
+audio_realism:
+1 = audio is clearly unnatural, distorted, mechanical, or implausible for the scene.
+2 = audio is understandable but has weak realism, poor spatial fit, or obvious synthetic artifacts.
+3 = audio is basically plausible, but has noticeable synthetic quality or imperfect scene fit.
+4 = audio is natural, clear, and scene-appropriate, with only minor realism issues.
+5 = audio is highly natural, clear, spatially plausible, and convincing for the scene.
+audio_artifact_control:
+1 = severe clipping, buzzing, dropouts, abrupt silence, glitches, or repetitive loops interfere with understanding.
+2 = obvious artifacts appear repeatedly and hurt the viewing experience.
+3 = artifacts are noticeable but the audio remains usable.
+4 = artifacts are rare or mild.
+5 = audio is clean and stable, with no obvious technical artifacts."""
+
+AUDIO_LONG_RUBRIC = """Use 1-5 MOS scores for each long-range audio field.
+audio_continuity:
+1 = the soundtrack is fragmented, with frequent unexplained dropouts, hard cuts, or missing segments.
+2 = multiple continuity problems make transitions between events clearly unnatural.
+3 = audio is generally continuous, but has several audible hard cuts, gaps, or abrupt changes.
+4 = audio continuity is good, with only minor cross-event discontinuities.
+5 = audio remains smooth and continuous across the full video.
+ambience_stability:
+1 = background ambience or music is chaotic, inconsistent, or changes without scene logic.
+2 = ambience has obvious instability or abrupt cross-event shifts.
+3 = ambience is mostly stable, but contains several noticeable jumps or mismatched background changes.
+4 = ambience and music are stable overall, with only minor fluctuations.
+5 = ambience, music, and acoustic atmosphere remain coherent and scene-appropriate throughout.
+source_consistency:
+1 = sound sources are confusing or implausible; voices, objects, or environmental sounds do not match the video.
+2 = several sound sources change identity, direction, or type in inconsistent ways.
+3 = main sound sources are mostly plausible, but some local inconsistencies remain.
+4 = sound sources are consistent, with only minor detail errors.
+5 = voices, object sounds, and environmental sources remain consistent and believable throughout.
+volume_stability:
+1 = volume is uncontrolled, with frequent overly loud, too quiet, clipped, or suddenly silent passages.
+2 = multiple loudness jumps or mixing imbalances clearly hurt the experience.
+3 = volume is acceptable overall, but noticeable fluctuations remain.
+4 = loudness and mixing are mostly stable, with only mild fluctuations.
+5 = loudness, dynamic range, and mixing are stable and natural across the full video."""
+
 HF_TASK_DIRS = {
     "t2av": "T2AV",
     "i2av": "I2AV",
@@ -600,9 +737,8 @@ def _score_event_realization(
         preview = _make_preview(Path(event["video_path"]), output_dir / "previews" / f"{event['event_id']}_realization.mp4")
         prompt = (
             "Evaluate event realization quality for this single generated event clip.\n"
-            "Use 1-5 MOS scores. 1=failed/severe defects, 3=acceptable with visible issues, 5=excellent.\n"
             "Focus on generation quality of the attempted event: motion, subject integrity, artifact control, and visual quality.\n"
-            "Semantic fulfillment is scored separately, but if the target event is absent or unjudgeable, use 1-2.\n\n"
+            f"{EVENT_REALIZATION_RUBRIC}\n\n"
             f"Global description:\n{canonical.get('global_description', '')}\n\n"
             f"Event text:\n{event.get('text', '')}\n\n"
             "Return strict JSON: "
@@ -628,8 +764,8 @@ def _score_long_form_structure(client, model: str, canonical: dict[str, Any], vi
     preview = _make_preview(video_path, output_dir / "previews" / "long_form_structure.mp4", fps=3, max_width=480)
     prompt = (
         "Evaluate long-form structure for this complete generated video.\n"
-        "Use 1-5 MOS scores. Focus on event order, coverage balance, pacing, and cross-event continuity.\n"
-        "Do not judge low-level frame quality here unless it breaks the long-form structure.\n\n"
+        "Focus on event order, coverage balance, pacing, and cross-event continuity.\n"
+        f"{LONG_FORM_RUBRIC}\n\n"
         f"Global description:\n{canonical.get('global_description', '')}\n\n"
         f"Event list:\n{_event_lines(canonical)}\n\n"
         "Return strict JSON: "
@@ -656,7 +792,7 @@ def _score_transition_stability(client, model: str, boundaries: list[dict[str, A
         prompt = (
             "Evaluate transition stability for this event-boundary clip.\n"
             "Normal shot changes and event changes are allowed. Penalize only boundary defects: black frames, flashes, freezes, repeated frames, stutter, non-story deformation, broken action, or object disappearance.\n"
-            "Use a 1-5 quality score. 1=severe boundary failure, 3=noticeable but tolerable defect, 5=clean/stable boundary.\n\n"
+            f"{TRANSITION_RUBRIC}\n\n"
             f"Left event:\n{boundary.get('left_text', '')}\n\n"
             f"Right event:\n{boundary.get('right_text', '')}\n\n"
             "Return strict JSON: "
@@ -691,8 +827,8 @@ def _score_holistic_presentation(client, model: str, canonical: dict[str, Any], 
     preview = _make_preview(video_path, output_dir / "previews" / "holistic_presentation.mp4", fps=3, max_width=480)
     prompt = (
         "Evaluate holistic presentation for this complete generated advertising video.\n"
-        "Use 1-5 MOS scores. Focus on overall presentation, style consistency, visual appeal, commercial completeness, and watchability.\n"
-        "Do not duplicate event-level checklist scoring.\n\n"
+        "Focus on overall presentation, style consistency, visual appeal, commercial completeness, and watchability.\n"
+        f"{HOLISTIC_RUBRIC}\n\n"
         f"Global description:\n{canonical.get('global_description', '')}\n\n"
         f"Event list:\n{_event_lines(canonical)}\n\n"
         "Return strict JSON: "
@@ -939,13 +1075,10 @@ def _score_audio_events(
 
         prompt = (
             "Evaluate the audio of this generated event clip.\n"
-            "Use 1-5 MOS scores. 1=failed or absent audio, 3=partly acceptable, 5=excellent.\n"
             "Score only audio-related behavior, while using the visible video to judge synchronization and correspondence.\n"
-            "- av_sync: whether speech, sound effects, music changes, and audible accents align with visible actions/cuts.\n"
-            "- audio_event_match: whether the audio matches the event text and audio expectation.\n"
-            "- audio_realism: whether the audio is natural, clear, and plausible for the scene.\n"
-            "- audio_artifact_control: whether the clip avoids clipping, buzzing, abrupt silence, glitches, or repetitive loops.\n"
-            "If the clip is silent when silence is not explicitly expected, score the audio fields low.\n\n"
+            "If the clip is silent when silence is not explicitly expected, score the audio fields low. "
+            "If silence is explicitly expected, judge whether the silence is appropriate and technically clean.\n\n"
+            f"{AUDIO_EVENT_RUBRIC}\n\n"
             f"Model: {model}\n\n"
             f"Event text:\n{event.get('text', '')}\n\n"
             f"Audio expectation:\n{event.get('audio_expectation', '')}\n\n"
@@ -1015,12 +1148,8 @@ def _score_audlong(
     algorithm_mos = _norm_0_100_to_mos(algorithm_raw)
     prompt = (
         "Evaluate long-range audio coherence for this complete generated video with audio.\n"
-        "Use 1-5 MOS scores. 1=failed/unstable, 3=acceptable with issues, 5=excellent.\n"
         "Focus on minute-scale audio behavior, not visual quality.\n"
-        "- audio_continuity: whether the soundtrack avoids unexplained dropouts, hard cuts, or broken segments.\n"
-        "- ambience_stability: whether background ambience/music remains coherent across events.\n"
-        "- source_consistency: whether recurring voices, sound sources, and sound effects stay plausible.\n"
-        "- volume_stability: whether volume, loudness, and mixing avoid abrupt jumps, clipping, or distortion.\n\n"
+        f"{AUDIO_LONG_RUBRIC}\n\n"
         f"Model: {model}\n\n"
         f"Global description:\n{canonical.get('global_description', '')}\n\n"
         f"Event audio expectations:\n{_audio_expectation_lines(events)}\n\n"
